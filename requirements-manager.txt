@@ -1,2 +1,5 @@
 psycopg2
 
+# MARTINELLI: required if requirements-provider.txt
+# not included in requirements
+geoalchemy2

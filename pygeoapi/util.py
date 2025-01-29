@@ -35,7 +35,7 @@ from filelock import FileLock
 import functools
 from functools import partial
 from dataclasses import dataclass
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 from decimal import Decimal
 from enum import Enum
 import json
@@ -51,6 +51,15 @@ from urllib.request import urlopen
 import uuid
 
 import dateutil.parser
+from babel.support import Translations
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2.exceptions import TemplateNotFound
+import pyproj
+import pygeofilter.ast
+import pygeofilter.values
+from pyproj.exceptions import CRSError
+from requests import Session
+from requests.structures import CaseInsensitiveDict
 from shapely import ops
 from shapely.geometry import (
     box,
@@ -66,14 +75,6 @@ from shapely.geometry import (
     mapping as geom_to_geojson,
 )
 import yaml
-from babel.support import Translations
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-import pygeofilter.ast
-import pygeofilter.values
-import pyproj
-from pyproj.exceptions import CRSError
-from requests import Session
-from requests.structures import CaseInsensitiveDict
 
 from pygeoapi import __version__
 from pygeoapi import l10n
@@ -127,13 +128,13 @@ def dategetter(date_property: str, collection: dict) -> str:
 
     value = collection.get(date_property)
 
-    if value is None:
-        return None
+    if value is None or isinstance(value, str):
+        return value
+    else:
+        return value.isoformat()
 
-    return value.isoformat()
 
-
-def get_typed_value(value: str) -> Union[float, int, str]:
+def get_typed_value(value: str) -> Union[bool, float, int, str]:
     """
     Derive true type from data value
 
@@ -147,6 +148,8 @@ def get_typed_value(value: str) -> Union[float, int, str]:
             value2 = float(value)
         elif len(value) > 1 and value.startswith('0'):
             value2 = value
+        elif value.lower() in ['true', 'false']:
+            value2 = str2bool(value)
         else:  # int?
             value2 = int(value)
     except ValueError:  # string (default)?
@@ -168,7 +171,7 @@ def yaml_load(fh: IO) -> dict:
     # # https://stackoverflow.com/a/55301129
 
     env_matcher = re.compile(
-        r'.*?\$\{(?P<varname>\w+)(:-(?P<default>[^}]+))?\}')
+        r'.*?\$\{(?P<varname>\w+)(:-(?P<default>[^}]*))?\}')
 
     def env_constructor(loader, node):
         result = ""
@@ -297,6 +300,11 @@ def format_datetime(value: str, format_: str = DATETIME_FORMAT) -> str:
         return ''
 
     return dateutil.parser.isoparse(value).strftime(format_)
+
+
+def get_current_datetime(tz: timezone = timezone.utc,
+                         format_: str = DATETIME_FORMAT) -> str:
+    return datetime.now(tz).strftime(format_)
 
 
 def file_modified_iso8601(filepath: Path) -> str:
@@ -473,7 +481,12 @@ def render_j2_template(config: dict, template: Path,
     translations = Translations.load(locale_dir, [locale_])
     env.install_gettext_translations(translations)
 
-    template = env.get_template(template)
+    try:
+        template = env.get_template(template)
+    except TemplateNotFound:
+        LOGGER.debug(f'template {template} not found')
+        template_paths.remove(templates)
+        template = env.get_template(template)
 
     return template.render(config=l10n.translate_struct(config, locale_, True),
                            data=data, locale=locale_, version=__version__)

@@ -49,6 +49,7 @@ from typing import Tuple
 import urllib.parse
 
 from pygeoapi import l10n
+from pygeoapi.api import evaluate_limit
 from pygeoapi.util import (
     json_serial, render_j2_template, JobStatus, RequestedProcessExecutionMode,
     to_json, DATETIME_FORMAT)
@@ -100,24 +101,20 @@ def describe_processes(api: API, request: APIRequest,
             relevant_processes = [process]
         else:
             LOGGER.debug('Processing limit parameter')
+            if api.config['server'].get('limit') is not None:
+                msg = ('server.limit is no longer supported! '
+                       'Please use limits at the server or collection '
+                       'level (RFC5)')
+                LOGGER.warning(msg)
             try:
-                limit = int(request.params.get('limit'))
-
-                if limit <= 0:
-                    msg = 'limit value should be strictly positive'
-                    return api.get_exception(
-                        HTTPStatus.BAD_REQUEST, headers, request.format,
-                        'InvalidParameterValue', msg)
-
+                limit = evaluate_limit(request.params.get('limit'),
+                                       api.config['server'].get('limits', {}),
+                                       {})
                 relevant_processes = list(api.manager.processes)[:limit]
-            except TypeError:
-                LOGGER.debug('returning all processes')
-                relevant_processes = api.manager.processes.keys()
-            except ValueError:
-                msg = 'limit value should be an integer'
+            except ValueError as err:
                 return api.get_exception(
                     HTTPStatus.BAD_REQUEST, headers, request.format,
-                    'InvalidParameterValue', msg)
+                    'InvalidParameterValue', str(err))
 
         for key in relevant_processes:
             p = api.manager.get_processor(key)
@@ -214,6 +211,7 @@ def describe_processes(api: API, request: APIRequest,
 
     if request.format == F_HTML:  # render
         if process is not None:
+            api.set_dataset_templates(process)
             response = render_j2_template(api.tpl_config,
                                           'processes/process.html',
                                           response, request.locale)
@@ -243,21 +241,13 @@ def get_jobs(api: API, request: APIRequest,
                                            **api.api_headers)
     LOGGER.debug('Processing limit parameter')
     try:
-        limit = int(request.params.get('limit'))
-
-        if limit <= 0:
-            msg = 'limit value should be strictly positive'
-            return api.get_exception(
-                HTTPStatus.BAD_REQUEST, headers, request.format,
-                'InvalidParameterValue', msg)
-    except TypeError:
-        limit = int(api.config['server']['limit'])
-        LOGGER.debug('returning all jobs')
-    except ValueError:
-        msg = 'limit value should be an integer'
+        limit = evaluate_limit(request.params.get('limit'),
+                               api.config['server'].get('limits', {}),
+                               {})
+    except ValueError as err:
         return api.get_exception(
             HTTPStatus.BAD_REQUEST, headers, request.format,
-            'InvalidParameterValue', msg)
+            'InvalidParameterValue', str(err))
 
     LOGGER.debug('Processing offset parameter')
     try:
@@ -282,7 +272,7 @@ def get_jobs(api: API, request: APIRequest,
         #       Here we do sort again in case the provider doesn't support
         #       pagination yet and always returns all jobs.
         jobs = sorted(jobs_data['jobs'],
-                      key=lambda k: k['job_start_datetime'],
+                      key=lambda k: k['started'],
                       reverse=True)
         numberMatched = jobs_data['numberMatched']
 
@@ -318,8 +308,10 @@ def get_jobs(api: API, request: APIRequest,
             'message': job_['message'],
             'progress': job_['progress'],
             'parameters': job_.get('parameters'),
-            'job_start_datetime': job_['job_start_datetime'],
-            'job_end_datetime': job_['job_end_datetime']
+            'created': job_['created'],
+            'started': job_['started'],
+            'finished': job_['finished'],
+            'updated': job_['updated']
         }
 
         # TODO: translate

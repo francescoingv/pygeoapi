@@ -35,7 +35,7 @@ from filelock import FileLock
 import functools
 from functools import partial
 from dataclasses import dataclass
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 from decimal import Decimal
 from enum import Enum
 import json
@@ -128,13 +128,13 @@ def dategetter(date_property: str, collection: dict) -> str:
 
     value = collection.get(date_property)
 
-    if value is None:
-        return None
+    if value is None or isinstance(value, str):
+        return value
+    else:
+        return value.isoformat()
 
-    return value.isoformat()
 
-
-def get_typed_value(value: str) -> Union[float, int, str]:
+def get_typed_value(value: str) -> Union[bool, float, int, str]:
     """
     Derive true type from data value
 
@@ -148,6 +148,8 @@ def get_typed_value(value: str) -> Union[float, int, str]:
             value2 = float(value)
         elif len(value) > 1 and value.startswith('0'):
             value2 = value
+        elif value.lower() in ['true', 'false']:
+            value2 = str2bool(value)
         else:  # int?
             value2 = int(value)
     except ValueError:  # string (default)?
@@ -298,6 +300,11 @@ def format_datetime(value: str, format_: str = DATETIME_FORMAT) -> str:
         return ''
 
     return dateutil.parser.isoparse(value).strftime(format_)
+
+
+def get_current_datetime(tz: timezone = timezone.utc,
+                         format_: str = DATETIME_FORMAT) -> str:
+    return datetime.now(tz).strftime(format_)
 
 
 def file_modified_iso8601(filepath: Path) -> str:

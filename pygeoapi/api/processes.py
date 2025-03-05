@@ -211,14 +211,14 @@ def describe_processes(api: API, request: APIRequest,
 
     if request.format == F_HTML:  # render
         if process is not None:
-            api.set_dataset_templates(process)
-            response = render_j2_template(api.tpl_config,
+            tpl_config = api.get_dataset_templates(process)
+            response = render_j2_template(api.tpl_config, tpl_config,
                                           'processes/process.html',
                                           response, request.locale)
         else:
-            response = render_j2_template(api.tpl_config,
-                                          'processes/index.html', response,
-                                          request.locale)
+            response = render_j2_template(
+                api.tpl_config, api.config['server']['templates'],
+                'processes/index.html', response, request.locale)
 
         return headers, HTTPStatus.OK, response
 
@@ -394,8 +394,10 @@ def get_jobs(api: API, request: APIRequest,
             'offset': offset,
             'now': datetime.now(timezone.utc).strftime(DATETIME_FORMAT)
         }
-        response = render_j2_template(api.tpl_config, j2_template, data,
-                                      request.locale)
+        response = render_j2_template(
+            api.tpl_config, api.config['server']['templates'], j2_template,
+            data, request.locale)
+
         return headers, HTTPStatus.OK, response
 
     return headers, HTTPStatus.OK, to_json(serialized_jobs,
@@ -586,8 +588,8 @@ def get_job_result(api: API, request: APIRequest,
                 'result': job_output
             }
             content = render_j2_template(
-                api.config, 'jobs/results/index.html',
-                data, request.locale)
+                api.config, api.config['server']['templates'],
+                'jobs/results/index.html', data, request.locale)
 
     return headers, HTTPStatus.OK, content
 
@@ -743,6 +745,25 @@ def get_oas_30(cfg: dict, locale: str) -> tuple[list[dict[str, str]], dict[str, 
                 }
             }
         }
+
+        try:
+            first_key = list(p.metadata['outputs'])[0]
+            p_output = p.metadata['outputs'][first_key]
+
+            if p_output.get('schema') is not None:
+                LOGGER.debug('Adding output schema')
+                content_media_type = p_output['schema'].pop('contentMediaType', 'application/json')  # noqa
+                paths[f'{process_name_path}/execution']['post']['responses']['200'] = {  # noqa
+                    'description': 'Process output schema',
+                    'content': {
+                        content_media_type: {
+                            'schema': p_output['schema']
+                        }
+                    }
+                }
+        except (IndexError, KeyError):
+            LOGGER.debug('No output defined')
+
         if 'example' in p.metadata:
             paths[f'{process_name_path}/execution']['post']['requestBody']['content']['application/json']['example'] = p.metadata['example']  # noqa
 

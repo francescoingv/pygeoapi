@@ -80,7 +80,7 @@ DEFAULT_STORAGE_CRS = DEFAULT_CRS
 
 CONFORMANCE_CLASSES_FEATURES = [
     'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core',
-    'http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30',
+    'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30',
     'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html',
     'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson',
     'http://www.opengis.net/spec/ogcapi-features-2/1.0/conf/crs',
@@ -88,7 +88,7 @@ CONFORMANCE_CLASSES_FEATURES = [
     'http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/queryables-query-parameters',  # noqa
     'http://www.opengis.net/spec/ogcapi-features-4/1.0/conf/create-replace-delete',  # noqa
     'http://www.opengis.net/spec/ogcapi-features-5/1.0/conf/schemas',
-    'http://www.opengis.net/spec/ogcapi-features-5/1.0/req/core-roles-features'
+    'http://www.opengis.net/spec/ogcapi-features-5/1.0/conf/core-roles-features'  # noqa
 ]
 
 CONFORMANCE_CLASSES_RECORDS = [
@@ -149,7 +149,7 @@ def get_collection_queryables(api: API, request: Union[APIRequest, Any],
 
     if p.fields:
         queryables['properties']['geometry'] = {
-            '$ref': 'https://geojson.org/schema/Geometry.json',
+            'format': 'geometry-any',
             'x-ogc-role': 'primary-geometry'
         }
 
@@ -648,6 +648,8 @@ def get_collection_items(
             api, content, dataset, id_field=(p.uri_field or 'id')
         )
 
+        return headers, HTTPStatus.OK, content
+
     return headers, HTTPStatus.OK, to_json(content, api.pretty_print)
 
 
@@ -929,6 +931,8 @@ def get_collection_item(api: API, request: APIRequest,
         content = geojson2jsonld(
             api, content, dataset, uri, (p.uri_field or 'id')
         )
+
+        return headers, HTTPStatus.OK, content
 
     return headers, HTTPStatus.OK, to_json(content, api.pretty_print)
 

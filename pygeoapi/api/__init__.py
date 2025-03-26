@@ -1085,7 +1085,7 @@ def describe_collections(api: API, request: APIRequest,
 
         if collection_data_type in ['feature', 'coverage', 'record']:
             collection['links'].append({
-                'type': FORMAT_TYPES[F_JSON],
+                'type': 'application/schema+json',
                 'rel': f'{OGC_RELTYPES_BASE}/schema',
                 'title': l10n.translate('Schema of collection in JSON', request.locale),  # noqa
                 'href': f'{api.get_collections_url()}/{k}/schema?f={F_JSON}'  # noqa
@@ -1418,7 +1418,7 @@ def get_collection_schema(api: API, request: Union[APIRequest, Any],
 
     if p.type != 'coverage':
         schema['properties']['geometry'] = {
-            '$ref': 'https://geojson.org/schema/Geometry.json',
+            'format': 'geometry-any',
             'x-ogc-role': 'primary-geometry'
         }
 

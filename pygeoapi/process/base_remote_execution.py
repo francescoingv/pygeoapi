@@ -210,16 +210,18 @@ class BaseRemoteExecutionProcessor(BaseProcessor):
                     break
 
         if info['job_info']['exit_code'] != 0:
-            error_msg = \
-                "The job '" + info['job_id'] + \
-                "' exited with code: " + info['job_info']['exit_code'] + \
-                "\nError message:\n" + info['job_info']['std_err']
+            error_msg = (
+                f"The job '{info['job_id']}' exited with code: "
+                f"{info['job_info']['exit_code']}\n"
+                f"Error message:\n{info['job_info']['std_err']}"
+            )
             logging.error(error_msg)
             # Don't return complete message to client:
             # could contain security info.
-            message = \
-                "The job " + info['job_id'] + \
-                " exited with code " + info['job_info']['exit_code']
+            message = (
+                f"The job '{info['job_id']}' "
+                f"exited with code {info['job_info']['exit_code']}"
+            )
             raise ProcessorExecuteError(message)
         mimetype, process_outputs = self.prepare_output(info, working_dir)
 

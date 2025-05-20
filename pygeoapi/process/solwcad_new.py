@@ -42,246 +42,333 @@ LOGGER = logging.getLogger(__name__)
 
 #: Process metadata and description
 PROCESS_METADATA = {
+    # process.yaml -> processSummary.yaml
+
+    # Proprietà required:
     'id': 'solwcad',
-    'title': 'SOLWCAD',
-    'description':
-        'Fortran code to compute the saturation surface of H2O-CO2 '
-        'fluids in silicate melts of arbitrary composition.',
-    'version': '1.0.0',
+    # type string
+
+    'version': '2.1.0',
+    # type string
+
+    # Altre proprietà non required:
     'jobControlOptions': [
         'async-execute',
         'sync-execute'
     ],
+    'proprieta_aggiunta': 'altra proprietà',
+    
+    # type: array,
+    #   items: {type: string, enum: ['sync-execute', 'async-execute', 'dismiss']}
+
+    # outputTransmission
+    # type: array, 
+    #   items: {type: string, enum: ['value', 'reference'], default: 'value'}
+
+    # links:
+    # type: array, 
+    #   items: {type: object, required: 'href', properties:
+    #       href: type: string
+    #       rel: type: string, example: 'service'
+    #       type: type: string, example: 'application/json'
+    #       hreflang: type: string, example: 'en'
+    #       title: type: string
+
+    # process.yaml -> processSummary.yaml -> descriptionType.yml
+    # Tutte proprietà non required:
+    'title': 'SOLWCAD',
+    # type: string
+
+    'description':
+        'Fortran code to compute the saturation surface of H2O-CO2 '
+        'fluids in silicate melts of arbitrary composition.',
+    # type: string
+    
     'keywords': ['Fortran code', 'saturation surface', 'other keywords...'],
+    # type: array
+    #   items: type: string
+
+    # process.yaml
     'inputs': {
-        'swinput.data': {
+        # inputDescription.yaml
+        'elaboration_type': {
             'title': 'Desired computation',
-            'description': 'Specifics for the desired computation.',
             'minOccurs': 1,
             'maxOccurs': 1,
             'schema': {
+                'type': 'string',
                 'oneOf': [
                     {
-                        'type': 'object',
+                        'const': 'Saturation',
                         'description':
-                            'The computation is performed at user-defined P-T '
-                            'conditions in sw.data. H2O and CO2 contents in '
-                            'sw.data refer to total amounts in the two-phase '
-                            'magma, or to (mass of volatile component) / '
-                            '(mass of melt + fluid phases). '
-                            'SOLWCAD computes the partitioning of the two '
-                            'volatiles in the fluid and melt phases for '
-                            'user-defined composition. '
-                            'Computations are performed from item ndat1 to '
-                            'item ndat2 (only one computation is performed if '
-                            'ndat1 = ndat2).',
-                        'required': [
-                            'ndat1',
-                            'ndat2',
-                            'kl'
-                        ],
-                        'properties': {
-                            'ndat1': {
-                                'type': 'integer',
-                                'description':
-                                    'Computations are performed from item '
-                                    'ndat1 of sw.data'
-                              },
-                            'ndat2': {
-                                'type': 'integer',
-                                'description':
-                                    'Computations are performed up to item '
-                                    'ndat2 of sw.data'
-                            },
-                            'kl': {
-                                'type': 'integer',
-                                'enum': [0]  # the only one accepted value
-                            }
-                            # not used for kl = 0:
-                            # 'iopen', 'fopen', 'dt', 'tlimit'
-                        }
+                            'saturation of water and CO2 at given pressure, '
+                            'temperature and silicate melt composition '
+                            '(described as weight fractions of 10 major oxides: '
+                            'SiO2 TiO2 Al2O3 Fe2O3 FeO MnO MgO CaO Na2O K2O)'
                     },
                     {
-                        'type': 'object',
+                        'const': 'Equilibrium',
                         'description':
-                            'The computation is performed with reference to '
-                            'item ndat1 in sw.data, at constant user-defined '
-                            'T and for pressure from user-defined P to '
-                            'atmospheric. At each pressure, a computation '
-                            'similar to the one for kl=0 is performed.',
-                        'required': [
-                            'ndat1',
-                            'kl',
-                            'iopen'
-                        ],
-                        'properties': {
-                            'ndat1': {
-                                'type': 'integer',
-                                'description':
-                                    'Computations are performed from item '
-                                    'ndat1 of sw.data'
-                            },
-                            'kl': {
-                                'type': 'integer',
-                                'enum': [1],  # the only one accepted value
-                            },
-                            'iopen': {
-                                'type': 'integer',
-                                'enum': [0, 1],
-                                'description':
-                                    '0 for closed-system calculations, '
-                                    '1 for open system calculations.'
-                            },
-                            'fopen': {
-                                'type': 'string',
-                                'pattern':
-                                    r"^([+-]?([\d]+\.|[\d]*\.[\d]+))"
-                                    r"([Dd][+-]?[\d]+)?$",
-                                'description':
-                                    'Only used with iopen =1. It specifies '
-                                    'the weight fraction of fluid phase lost '
-                                    'at each subsequent computation step.'
-                            }
-                            # not used for kl = 0:
-                            # 'dt', 'tlimit'
-                        }
-                    },
-                    {
-                        'type': 'object',
-                        'description':
-                            'Same as for kl=1, but for fixed P (from sw.data) '
-                            'and T from the item ndat1 in sw.data to a '
-                            'user-defined value tlimit, with user-defined '
-                            'T-steps.',
-                        'required': [
-                            'ndat1',
-                            'kl',
-                            'iopen',
-                            'dt',
-                            'tlimit'
-                            # 'fopen' is not always required, only if iopen=1
-                        ],
-                        'properties': {
-                            'ndat1': {
-                                'type': 'integer',
-                                'description':
-                                    'Computations are performed on item ndat1 '
-                                    'of sw.data'
-                            },
-                            'kl': {
-                                'type': 'integer',
-                                'enum': [2],  # the only one accepted value
-                            },
-                            'iopen': {
-                                'type': 'integer',
-                                'enum': [0, 1],
-                                'description':
-                                    '0 for closed-system calculations, '
-                                    '1 for open system calculations.'
-                            },
-                            'fopen': {
-                                'type': 'string',
-                                'pattern':
-                                    r"^([+-]?([\d]+\.|[\d]*\.[\d]+))"
-                                    r"([Dd][+-]?[\d]+)?$",
-                                'description':
-                                    'Only used with iopen =1. It specifies '
-                                    'the weight fraction of fluid phase lost '
-                                    'at each subsequent computation step.'
-                            },
-                            'dt': {
-                                'type': 'string',
-                                'pattern':
-                                    r"^([+-]?([\d]+\.|[\d]*\.[\d]+))"
-                                    r"([Dd][+-]?[\d]+)?$",
-                                'description':
-                                    'The length of the T-steps (either '
-                                    'positive or negative).'
-                            },
-                            'tlimit': {
-                                'type': 'string',
-                                'pattern':
-                                    r"^([+-]?([\d]+\.|[\d]*\.[\d]+))"
-                                    r"([Dd][+-]?[\d]+)?$",
-                                'description':
-                                    'The temperature up to which separate '
-                                    'computations are performed. It can be '
-                                    'either higher (dt>0) or lower (dt<0) '
-                                    'than T.'
-                            }
-                        }
-                    },
-                    {
-                        'type': 'object',
-                        'description':
-                            'H2O and CO2 in sw.data items represent amounts '
-                            'dissolved in the melt phase. For user-defined '
-                            'melt composition and temperature, SOLWCAD '
-                            'returns the equilibrium pressure and composition '
-                            'of the coexisting fluid phase. Computations are '
-                            'performed from item ndat1 to item ndat2 (only '
-                            'one computation is performed if ndat1=ndat2 ). '
-                            'This kind of computation is commonly used in the '
-                            'analysis of melt inclusion data.',
-                        'required': [
-                            'ndat1',
-                            'ndat2',
-                            'kl'
-                        ],
-                        'properties': {
-                            'ndat1': {
-                                'type': 'integer',
-                                'description':
-                                    'Computations are performed on item ndat1 '
-                                    'of sw.data'
-                            },
-                            'ndat2': {
-                                'type': 'integer',
-                                'description':
-                                    'Computations are performed up to item '
-                                    'ndat2 of sw.data'
-                            },
-                            'kl': {
-                                'type': 'integer',
-                                'enum': [-1],   # the only one accepted value
-                            }
-                            # not used for kl = 0:
-                            # 'iopen', 'fopen', 'dt', 'tlimit'
-                        }
+                            'equilibrium pressure given temperature, silicate '
+                            'melt composition (described as weight fractions of '
+                            '10 major oxides: SiO2 TiO2 Al2O3 Fe2O3 FeO MnO MgO '
+                            'CaO Na2O K2O) and weight fractions of water and '
+                            'CO2 dissolved in the melt'
                     }
                 ]
             }
         },
-        'sw.data': {
-            'title': 'User data',
+        'pressure': {
+            'title': 'pressure P [Pa]',
+            'description': 'required only for Saturation',
+            'minOccurs': 0,
+            'maxOccurs': 1,
+            'schema': {
+                'type': 'object',
+                'required': ['low_pressure'],
+                'properties': {
+                    'low_pressure': {
+                        'type': 'number',
+                        'title': 'low pressure',
+                        'description':
+                            'pressure at which calculations need '
+                            'to be performed, or low pressure if '
+                            'pressure range is required',
+                        'minimum': 10e5,
+                        'maximum': 10e9
+                    },
+                    'high_pressure': {
+                        'type': 'number',
+                        'title': 'high pressure P [Pa]',
+                        'description':
+                            'high pressure for pressure range '
+                            'calculations. Not to be provided for '
+                            'single pressure value calculations',
+                        'minimum': 10e5,
+                        'maximum': 10e9
+                    },
+                    'step_pressure': {
+                        'type': 'number',
+                        'title': 'incremental pressure step [Pa]',
+                        'description':
+                            'step to use for pressure range '
+                            'calculations. Not to be provided for '
+                            'single pressure value calculations',
+                        'minimum': 0.0,
+                        'exclusiveMinimum': True, # 0 non ammesso!
+                    }
+                }
+            }
+        },
+        'temperature': {
+            'title': 'temperature T [K]',
+            'minOccurs': 1,
+            'maxOccurs': 1,
+            'schema': {
+                'type': 'object',
+                'required': ['low_temperature'],
+                'properties': {
+                    'low_temperature': {
+                        'type': 'number',
+                        'title': 'low temperature',
+                        'description':
+                            'temperature at which calculations need '
+                            'to be performed, or low temperature if '
+                            'temperature range is required',
+                        'minimum': 973.0,
+                        'maximum': 1573.0
+                    },
+                    'high_temperature': {
+                        'type': 'number',
+                        'title': 'high temperature T [K]',
+                        'description':
+                            'high temperature for temperature range '
+                            'calculations. Not to be provided for '
+                            'single temperature value calculations',
+                        'minimum': 973.0,
+                        'maximum': 1573.0
+                    },
+                    'step_temperature': {
+                        'type': 'number',
+                        'title': 'incremental temperature step [K]',
+                        'description':
+                            'step to use for temperature range '
+                            'calculations. Not to be provided for '
+                            'single temperature value calculations',
+                        'minimum': 0.0,
+                        'exclusiveMinimum': True, # 0 non ammesso!
+                    }
+                }
+            }
+        },
+        'water': {
+            'title': 'water content',
             'description':
-                'user-defined conditions in terms of pressure, temperature, '
-                'and composition, each one arranged on a single item. Each '
-                'item contains the followings: pressure (Pa); '
-                'temperature (K); H2O content (wt fraction)**; '
-                'CO2 content (wt fraction)**; the following ten quantities '
-                'specify the volatile-free melt composition (wt fraction)***, '
-                'in the following order: SiO2; TiO2; Al2O3; Fe2O3; FeO; MnO; '
-                'MgO; CaO; Na2O; K2O. '
-                '**H2O and CO2 contents may refer to i) total amounts in the '
-                'two-phase magma, equal to (mass of volatile in the '
-                'fluid + mass of volatile dissolved in the melt) / (mass of '
-                'the gas phase + mass of the melt phase); or ii) the amounts '
-                'dissolved in the melt phase, that is, (mass of volatile '
-                'dissolved in the melt) / (mass of the melt phase). The '
-                'specific choice is determined by the parameter kl in '
-                'swinput.data.',
+                'total water content (weight fraction) - '
+                'mass of water/total mass of the system',
+            'minOccurs': 1,
+            'maxOccurs': 1,
+            'schema': {
+                'type': 'object',
+                'required': ['low_water'],
+                'properties': {
+                    'low_water': {
+                        'type': 'number',
+                        'title': 'low water content',
+                        'description':
+                            'water content at which calculations need '
+                            'to be performed, or low water content if '
+                            'water content range is required',
+                        'minimum': 10e-6,
+                        'maximum': 0.2
+                    },
+                    'high_water': {
+                        'type': 'number',
+                        'title': 'high water content',
+                        'description':
+                            'high water content for water content range '
+                            'calculations. Not to be provided for '
+                            'single water content value calculations',
+                        'minimum': 10e-6,
+                        'maximum': 0.2
+                    },
+                    'step_water': {
+                        'type': 'number',
+                        'title': 'incremental water content step',
+                        'description':
+                            'step to use for water content range '
+                            'calculations. Not to be provided for '
+                            'single water content value calculations',
+                        'minimum': 0.0,
+                        'exclusiveMinimum': True, # 0 non ammesso!
+                    }
+                }
+            }
+        },
+        'co2': {
+            'title': 'CO2 content',
+            'description':
+                'total CO2 content (weight fraction) - '
+                'mass of CO2/total mass of the system',
+            'minOccurs': 1,
+            'maxOccurs': 1,
+            'schema': {
+                'type': 'object',
+                'required': ['low_co2'],
+                'properties': {
+                    'low_co2': {
+                        'type': 'number',
+                        'title': 'low co2 content',
+                        'description':
+                            'co2 content at which calculations need '
+                            'to be performed, or low co2 content if '
+                            'co2 content range is required',
+                        'minimum': 10e-6,
+                        'maximum': 0.2
+                    },
+                    'high_co2': {
+                        'type': 'number',
+                        'title': 'high wateco2 content',
+                        'description':
+                            'high co2 content for co2 content range '
+                            'calculations. Not to be provided for '
+                            'single co2 content value calculations',
+                        'minimum': 10e-6,
+                        'maximum': 0.2
+                    },
+                    'step_co2': {
+                        'type': 'number',
+                        'title': 'incremental co2 content step',
+                        'description':
+                            'step to use for co2 content range '
+                            'calculations. Not to be provided for '
+                            'single co2 content value calculations',
+                        'minimum': 0.0,
+                        'exclusiveMinimum': True, # 0 non ammesso!
+                    }
+                }
+            }
+        },
+
+        'oxides': {
+            'title': 'oxides composition',
+            'description':
+                'silicate melt composition, described as weight fractions '
+                'of 10 major oxides',
             'minOccurs': 1,
             'maxOccurs': 'unbounded',
             'schema': {
                 'type': 'array',
-                'minItems': 14,
-                'maxItems': 14,
+                'minItems': 1,
+                'maxItems': 'unbounded',
                 'items': {
-                    'type': 'string',
-                    'pattern':
-                        r"^([+-]?([\d]+\.|[\d]*\.[\d]+))"
-                        r"([Dd][+-]?[\d]+)?$",
+                    'type': 'object',
+                    'required': [
+                        'sio2', 'tio2', 'al2o3', 'fe2o3', 'feo',
+                        'mno', 'mgo', 'cao', 'na2o', 'k2o'
+                    ],
+                    'properties': {
+                        'sio2': {
+                            'type': 'number',
+                            'title': 'SiO2',
+                            'minimum': 0.0,
+                            'maximum': 1.0
+                        },
+                        'tio2': {
+                            'type': 'number',
+                            'title': 'TiO2',
+                            'minimum': 0.0,
+                            'maximum': 1.0
+                        },
+                        'al2o3': {
+                            'type': 'number',
+                            'title': 'Al2O3',
+                            'minimum': 0.0,
+                            'maximum': 1.0
+                        },
+                        'fe2o3': {
+                            'type': 'number',
+                            'title': 'Fe2O3',
+                            'minimum': 0.0,
+                            'maximum': 1.0
+                        },
+                        'feo': {
+                            'type': 'number',
+                            'title': 'FeO',
+                            'minimum': 0.0,
+                            'maximum': 1.0
+                        },
+                        'mno': {
+                            'type': 'number',
+                            'title': 'MnO',
+                            'minimum': 0.0,
+                            'maximum': 1.0
+                        },
+                        'mgo': {
+                            'type': 'number',
+                            'title': 'MgO',
+                            'minimum': 0.0,
+                            'maximum': 1.0
+                        },
+                        'cao': {
+                            'type': 'number',
+                            'title': 'CaO',
+                            'minimum': 0.0,
+                            'maximum': 1.0
+                        },
+                        'na2o': {
+                            'type': 'number',
+                            'title': 'Na2O',
+                            'minimum': 0.0,
+                            'maximum': 1.0
+                        },
+                        'k2o': {
+                            'type': 'number',
+                            'title': 'K2O',
+                            'minimum': 0.0,
+                            'maximum': 1.0
+                        }
+                    }
                 }
             }
         }
@@ -302,9 +389,14 @@ PROCESS_METADATA = {
                 'phase (kg/m3 ); Density of the two-phase magma (kg/m3 ); '
                 'Viscosity of the melt phase [log (Pa s)]; Viscosity of '
                 'the two-phase magma [log (Pa s)].',
-            'minOccurs': 1,
-            'maxOccurs': 'unbounded',
-            'schema': {
+#            'minOccurs': 1,
+#            'maxOccurs': 'unbounded',
+#            'schema': {
+            'type': 'array',
+            'minItems': 1,
+            'maxItems': 'unbounded',
+            'contentMediaType': 'application/json',
+            'items': {
                 'type': 'array',
                 'minItems': 15,
                 'maxItems': 15,
@@ -428,14 +520,14 @@ PROCESS_METADATA = {
 }
 
 
-class SolwcadProcessor(BaseRemoteExecutionProcessor):
+class SolwcadProcessor_New(BaseRemoteExecutionProcessor):
     """Solwcad Processor example"""
     def __init__(self, processor_def):
         """
         Initialize object
         :param processor_def: provider definition
 
-        :returns: pygeoapi.process.solwcad.SolwcadProcessor
+        :returns: pygeoapi.process.solwcad.SolwcadProcessor_New
         """
         super().__init__(processor_def, PROCESS_METADATA)
 
@@ -457,20 +549,21 @@ class SolwcadProcessor(BaseRemoteExecutionProcessor):
             # NOTE: there is no check the output is well formatted,
             # i.e. one line per set of 15 numbers, without empty lines
             while len(line_items := output_file.readline().strip('\n')) > 0:
-                solwcad_out.append({"value": line_items.split()})
+#                solwcad_out.append({"value": line_items.split()})
+                solwcad_out.append(line_items.split())
 
-        output = {
-            'id': 'solwcad.out',
-            'value': solwcad_out
-        }
+#        output = {
+#            'id': 'solwcad.out',
+#            'value': solwcad_out
+#        }
+        output = solwcad_out
+
         return mimetype, output
 
     def prepare_input(self, data, working_dir):
-        pattern_generic_number = \
-            r"^([+-]?([\d]+\.|[\d]*\.[\d]+))([Dd][+-]?[\d]+)?$"
 
         try:
-            swinput = data['swinput.data']['value']
+            elaboration_type = data['elaboration_type']['value']
             sw = []
             for item in data['sw.data']:
                 sw.append(item['value'])
@@ -611,4 +704,4 @@ class SolwcadProcessor(BaseRemoteExecutionProcessor):
         return code_input_param
 
     def __repr__(self):
-        return f'<SolwcadProcessor> {self.name}'
+        return f'<SolwcadProcessor_New> {self.name}'

@@ -345,7 +345,12 @@ class XarrayProvider(BaseProvider):
 
         if self.time_field is not None:
             cj['domain']['axes']['t'] = {
-                'values': [str(v) for v in data[self.time_field].values]
+                'values': [str(v) for v in (
+                    data[self.time_field].values
+                    if hasattr(data[self.time_field].values, '__iter__')
+                    else [data[self.time_field].values]
+                    )
+                ]
             }
             cj['domain']['referencing'].append({
                 'coordinates': ['t'],
@@ -570,7 +575,7 @@ class XarrayProvider(BaseProvider):
         for var_name, var in self._data.variables.items():
             if all(dim in var.dims for dim in spatiotemporal_dims):
                 try:
-                    grid_mapping_name = self._data[var_name].attrs['grid_mapping']  # noqa 
+                    grid_mapping_name = self._data[var_name].attrs['grid_mapping']  # noqa
                     LOGGER.debug(f'Grid mapping: {grid_mapping_name}')
                 except KeyError as err:
                     LOGGER.debug(err)

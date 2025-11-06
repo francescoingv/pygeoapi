@@ -35,10 +35,11 @@ import sqlite3
 import logging
 import os
 import json
+
+from pygeoapi.crs import crs_transform
 from pygeoapi.plugin import InvalidPluginError
 from pygeoapi.provider.base import (BaseProvider, ProviderConnectionError,
                                     ProviderItemNotFoundError)
-from pygeoapi.util import crs_transform
 
 LOGGER = logging.getLogger(__name__)
 
@@ -162,7 +163,7 @@ class SQLiteGPKGProvider(BaseProvider):
                 LOGGER.warning('Missing geometry')
 
             feature['properties'] = rd
-            feature['id'] = feature['properties'].pop(self.id_field)
+            feature['id'] = feature['properties'][self.id_field]
 
             return feature
         else:

@@ -34,10 +34,11 @@ import logging
 
 from shapely.geometry import box, Point
 
+from pygeoapi.crs import crs_transform
 from pygeoapi.provider.base import (BaseProvider, ProviderInvalidQueryError,
                                     ProviderItemNotFoundError,
                                     ProviderQueryError)
-from pygeoapi.util import get_typed_value, crs_transform
+from pygeoapi.util import get_typed_value
 
 LOGGER = logging.getLogger(__name__)
 
@@ -159,7 +160,7 @@ class CSVProvider(BaseProvider):
                     coordinates = None
 
                 feature = {'type': 'Feature'}
-                feature['id'] = row.pop(self.id_field)
+                feature['id'] = row[self.id_field]
                 if not skip_geometry:
                     feature['geometry'] = {
                         'type': 'Point',

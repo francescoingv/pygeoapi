@@ -37,7 +37,7 @@
 
 from collections import ChainMap
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, UTC
 from http import HTTPStatus
 import logging
 from typing import Any, Tuple, Union
@@ -431,12 +431,12 @@ def get_collection_items(
         for s in sorts:
             prop = s
             order = '+'
-            if s[0] in ['+', '-']:
+            if s and s[0] in ['+', '-']:
                 order = s[0]
                 prop = s[1:]
 
             if prop not in p.fields.keys():
-                msg = 'bad sort property'
+                msg = 'bad sortby property'
                 return api.get_exception(
                     HTTPStatus.BAD_REQUEST, headers, request.format,
                     'InvalidParameterValue', msg)
@@ -625,7 +625,7 @@ def get_collection_items(
             'href': '/'.join(uri.split('/')[:-1])
         })
 
-    content['timeStamp'] = datetime.utcnow().strftime(
+    content['timeStamp'] = datetime.now(UTC).strftime(
         '%Y-%m-%dT%H:%M:%S.%fZ')
 
     # Set response language to requested provider locale

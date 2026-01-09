@@ -2,7 +2,7 @@
 #
 # Authors: Tom Kralidis <tomkralidis@gmail.com>
 #
-# Copyright (c) 2025 Tom Kralidis
+# Copyright (c) 2026 Tom Kralidis
 # Copyright (c) 2025 Angelos Tzotsos
 #
 # Permission is hereby granted, free of charge, to any person
@@ -103,7 +103,7 @@ master_doc = 'index'
 project = 'pygeoapi'
 author = 'pygeoapi development team'
 license = 'This work is licensed under a Creative Commons Attribution 4.0 International License'  # noqa
-copyright = '2018-2025, ' + author + ' ' + license
+copyright = '2018-2026, ' + author + ' ' + license
 
 today_fmt = '%Y-%m-%d'
 
@@ -112,7 +112,7 @@ today_fmt = '%Y-%m-%d'
 # built documents.
 #
 # The short X.Y version.
-version = '0.22.dev0'
+version = '0.23.dev0'
 # The full version, including alpha/beta/rc tags.
 release = version
 

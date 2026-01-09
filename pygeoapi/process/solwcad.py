@@ -287,8 +287,8 @@ PROCESS_METADATA = {
         }
     },
     'outputs': {
-        'title': 'Output result',
         'solwcad.out': {
+            'title': 'Output result',
             'description':
                 'Each record item contains the following quantities: '
                 'Pressure (Mpa); Temperature (K); Total ( kl >0) or '
@@ -425,6 +425,9 @@ PROCESS_METADATA = {
     #         { "value" : [ "2.00d8" , "1173." , ".0200" , ".0010" ,
     #         ".7053" , ".0032" , ".1301" , ".0027" , ".0146" , ".0006" ,
     #         ".0118" , ".0232" , ".0378" , ".0306" ] } ] } }
+    #
+    # curl -k -L -X POST "https://epos_geoinquire.pi.ingv.it/epos_pygeoapi/processes/solwcad/execution" -H "Content-Type: application/json" -d '{ "inputs" : {  "swinput.data" : { "value" : { "ndat1" : 1 , "ndat2" : 2 , "kl" : 0 } }, "sw.data" : [ { "value" : [ "1.00d8" , "1273." , ".0400" , ".0200" , ".7653" , ".0032" , ".1201" , ".0027" , ".0246" , ".0006" , ".0018" , ".0132" , ".0378" , ".0306" ] }, { "value" : [ "2.00d8" , "1173." , ".0200" , ".0010" , ".7053" , ".0032" , ".1301" , ".0027" , ".0146" , ".0006" , ".0118" , ".0232" , ".0378" , ".0306" ] } ] } }'
+    #
 }
 
 
@@ -439,7 +442,7 @@ class SolwcadProcessor(BaseRemoteExecutionProcessor):
         """
         super().__init__(processor_def, PROCESS_METADATA)
 
-    def prepare_output(self, info, working_dir):
+    def prepare_output(self, info, working_dir, outputs):
         # Only one output:
         #   "output in requested format"
         #   mediatype "as per output definition from process description"
@@ -465,7 +468,7 @@ class SolwcadProcessor(BaseRemoteExecutionProcessor):
         }
         return mimetype, output
 
-    def prepare_input(self, data, working_dir):
+    def prepare_input(self, data, working_dir, outputs):
         pattern_generic_number = \
             r"^([+-]?([\d]+\.|[\d]*\.[\d]+))([Dd][+-]?[\d]+)?$"
 

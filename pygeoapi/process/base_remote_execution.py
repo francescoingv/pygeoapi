@@ -78,9 +78,9 @@ class BaseRemoteExecutionProcessor(BaseProcessor):
         self.private_processor_dir = Path(self.private_processor_dir)
 
         self.polling_time = processor_def.get('polling_time', 3)
-        self.max_waiting_loops = max(
-            0, int(processor_def.get('max_waiting_loops', 1))
-        )
+#        self.max_waiting_loops = max(
+#            0, int(processor_def.get('max_waiting_loops', 1))
+#        )
 
         self.remote_execute_synch = processor_def.get(
             'remote_execute_synch', True
@@ -90,7 +90,7 @@ class BaseRemoteExecutionProcessor(BaseProcessor):
     def set_job_id(self, job_id: str) -> None:
         self.job_id = job_id
 
-    def prepare_input(self, data, working_dir):
+    def prepare_input(self, data, working_dir, outputs):
         """
         validate the input and prepare the objet to send to the 'code'
 
@@ -123,7 +123,7 @@ class BaseRemoteExecutionProcessor(BaseProcessor):
         """
         raise NotImplementedError()
 
-    def prepare_output(self, data, working_dir):
+    def prepare_output(self, data, working_dir, outputs):
         """
         prepare the output object as defined by the metadata definition of
         'outputs'.
@@ -161,7 +161,7 @@ class BaseRemoteExecutionProcessor(BaseProcessor):
         os.mkdir(working_dir, mode=0o755)
 
         try:
-            code_input_params = self.prepare_input(data, working_dir)
+            code_input_params = self.prepare_input(data, working_dir, outputs)
         except BaseException as ex:
             shutil.rmtree(working_dir)
             raise ex
@@ -183,18 +183,22 @@ class BaseRemoteExecutionProcessor(BaseProcessor):
                 shutil.rmtree(working_dir)
                 # Get returned message
                 message = response.json()['Message']
+                raise ProcessorExecuteError(message)
             except Exception:
                 # If no returned message, get exception message
                 raise ProcessorExecuteError(response)
-            raise ProcessorExecuteError(message)
+
+        # Nota: siccome response.ok, allora il thread è sicuramente partito,
+        # alternativamente avrebbe risposto con un abort().
 
         if self.remote_execute_synch:
             info = response.json()
         else:
             # Aspetta attivamente (con sleep) che il 'code' sia terminato
-            max_waiting_loops = self.max_waiting_loops + 1
-            while (max_waiting_loops := max_waiting_loops-1) > 0:
-                not time.sleep(self.polling_time)
+#            max_waiting_loops = self.max_waiting_loops + 1
+#            while (max_waiting_loops := max_waiting_loops-1) > 0:
+            while True:
+                time.sleep(self.polling_time)
                 execute_url = urljoin(
                     self.url_executor, "job_info/" + self.job_id
                 )
@@ -202,9 +206,10 @@ class BaseRemoteExecutionProcessor(BaseProcessor):
                 if not response.ok:
                     try:
                         message = response.json()['Message']
+                        raise ProcessorExecuteError(message)
                     except Exception:
                         raise ProcessorExecuteError(response)
-                    raise ProcessorExecuteError(message)
+                    
                 info = response.json()
                 if info['job_info']['end_processing']:
                     break
@@ -223,9 +228,10 @@ class BaseRemoteExecutionProcessor(BaseProcessor):
                 f"exited with code {info['job_info']['exit_code']}"
             )
             raise ProcessorExecuteError(message)
-        mimetype, process_outputs = self.prepare_output(info, working_dir)
+        
+        mimetype, process_outputs = self.prepare_output(info, working_dir, outputs)
 
         return mimetype, process_outputs
 
     def __repr__(self):
-        return f'<SolwcadProcessor> {self.name}'
+        return f'<BaseRemoteExecutionProcessor> {self.name}'

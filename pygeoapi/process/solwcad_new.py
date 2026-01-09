@@ -374,8 +374,8 @@ PROCESS_METADATA = {
         }
     },
     'outputs': {
-        'title': 'Output result',
         'solwcad.out': {
+            'title': 'Output result',
             'description':
                 'Each record item contains the following quantities: '
                 'Pressure (Mpa); Temperature (K); Total ( kl >0) or '
@@ -531,7 +531,7 @@ class SolwcadProcessor_New(BaseRemoteExecutionProcessor):
         """
         super().__init__(processor_def, PROCESS_METADATA)
 
-    def prepare_output(self, info, working_dir):
+    def prepare_output(self, info, working_dir, outputs):
         # Only one output:
         #   "output in requested format"
         #   mediatype "as per output definition from process description"
@@ -560,7 +560,7 @@ class SolwcadProcessor_New(BaseRemoteExecutionProcessor):
 
         return mimetype, output
 
-    def prepare_input(self, data, working_dir):
+    def prepare_input(self, data, working_dir, outputs):
 
         try:
             elaboration_type = data['elaboration_type']['value']

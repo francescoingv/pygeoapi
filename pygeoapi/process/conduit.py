@@ -84,12 +84,11 @@ PROCESS_METADATA = {
     # type: string
 
     'description':
-        'TBD : Colucci'
-        'Esempio da Solwcad: Fortran code to compute the saturation surface of H2O-CO2 '
-        'fluids in silicate melts of arbitrary composition.',
+        'Fortran code to calculate the multiphase, multicomponent '
+        'steady flow of magma along the volcanic conduit.',
     # type: string
     
-    'keywords': ['Fortran code', 'saturation surface', 'other keywords...'],
+    'keywords': ['Fortran code', 'conduit flow', 'multiphase flow'],
     # type: array
     #   items: type: string
 
@@ -97,9 +96,9 @@ PROCESS_METADATA = {
     'inputs': {
         # inputDescription.yaml
         'components': {
-            'title': 'components', # opzionale
+            'title': 'Model parameters', # opzionale
             'description':
-                'Components and their values. Values must be in scientific '
+                'Input parameters. Values must be in scientific '
                 'notation. ', # opzionale
             # 'keywords' : [] # opzionale, array di stringhe
             # 'metadata' : ... # opzionale
@@ -113,10 +112,8 @@ PROCESS_METADATA = {
                         'type': 'object',
                         'description':
                             'Parameters to calculate the multiphase '
-                            '(melt+crystals+gas), multicomponent flow of '
-                            'magma along volcanic conduits, assuming Volume '
-                            'fraction of crystals relative to a degassed magma '
-                            'set to 0.',
+                            '(melt+gas), multicomponent flow of '
+                            'crystal-free magma along the volcanic conduit',
                         'required': [
                             'p', 't', 'd', 'l', 'sio2', 'tio2', 'al2o3',
                             'fe2o3', 'feo', 'mno', 'mgo', 'cao', 'na2o', 'k2o',
